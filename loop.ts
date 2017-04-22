@@ -24,6 +24,9 @@ var world_rotation_speed : number = 0.0;
 var playerImage : Image;
 var brickImage : Image;
 var worldImage : Image;
+var mountainImage : Image;
+var treasureImage : Image;
+var treasure : number[][];
 // Things used by box2djs
 var b2CircleDef;
 var b2BodyDef;
@@ -96,6 +99,12 @@ function makeTitleBitmaps()
 
 function resetGame()
 {
+    newLevel();
+}
+
+function newLevel()
+{
+    createTreasure();
 }
 
 function press(c) {
@@ -175,6 +184,23 @@ function createPlatforms(world) {
 
 }
 
+function createTreasure() : void
+{
+    treasure = new Array();
+    var level : any = levels["Level 1"]["map"];
+    for(var l = 0;l< level.length; l++) {
+	var line : string = level[l];
+	platform_width = 0;
+	for (var x =0;x<line.length;x++) {
+	    if(line[x] == '$') {
+		if(platform_width == 0) {
+		    treasure.push([x,l]);
+		}
+	    }
+	}
+    }
+}
+
 function createWorld() {
     var worldAABB = new b2AABB();
     worldAABB.minVertex.Set(-1000, -1000);
@@ -195,6 +221,8 @@ function firstTimeInit(): void
     playerImage = getImage("player-upscaled");
     brickImage = getImage("brick-upscaled");
     worldImage = getImage("world");
+    mountainImage = getImage("mountain");
+    treasureImage = getImage("treasure-upscaled")
 }
 
 function processKeys(): void
@@ -275,7 +303,12 @@ function drawBitmap(ctx) : void
     ctx.fillStyle = "black";
     ctx.fillRect(0, translation_y, canvasWidth, canvasHeight);
     var pos = playerBox.GetCenterPosition();
-
+    var mx : number = (-405*world_rotation+128) % 128;    
+    for(var i=-1;i<6;i++) {
+	ctx.drawImage(mountainImage, mx+i*128, 480);
+    }
+    ctx.fillStyle = "#c0c0c0";
+    ctx.fillRect(0,480+128,640,128);
     ctx.save();
     ctx.translate(320,240);
     ctx.rotate(world_rotation);
@@ -296,9 +329,12 @@ function drawBitmap(ctx) : void
 	    }
 	}
     }
+    for(var i=0;i<treasure.length;i++) {
+	var tpos : number[] = treasure[i];
+	ctx.drawImage(treasureImage, tpos[0]*32, tpos[1]*32);
+    }
     ctx.restore();
     ctx.drawImage(playerImage, pos.x-16, pos.y-32);
-
 }
 
 function step(cnt) {
@@ -322,6 +358,7 @@ var world;
 window.onload=function() {
     firstTimeInit();
     world = createWorld();
+    newLevel();
     ctx = $('canvas').getContext('2d');
     var canvasElm = $('canvas');
     canvasWidth = parseInt(canvasElm.width);
