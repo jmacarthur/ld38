@@ -6,11 +6,9 @@ var body = document.getElementsByTagName('body')[0];
 var keysDown = new Array();
 var SCREENWIDTH  = 640;
 var SCREENHEIGHT = 480;
-var MODE_TITLE = 0;
-var MODE_PLAY  = 1;
-var MODE_WIN   = 2;
-
-enum Mode { MODE_TITLE, MODE_PLAY, MODE_WIN };
+var canvasHeight : number, canvasWidth : number;
+var canvasLeft : number, canvasTop : number;
+enum Mode { TITLE, PLAY, WIN };
 var winBitmap, titleBitmap; 
 var winctx, titlectx;
 var mode : Mode;
@@ -23,6 +21,7 @@ var b2Joint;
 var b2RevoluteJointDef;
 var b2BoxDef, b2AABB;
 var b2Vec2, b2World;
+
 // Other external things
 var $;
 
@@ -76,7 +75,7 @@ function resetGame()
 
 function init()
 {
-    mode = MODE_TITLE;
+    mode = Mode.TITLE;
     playerImage = getImage("player");
     springSound = new Audio("audio/boing.wav");
     makeTitleBitmaps();
@@ -87,12 +86,12 @@ function draw() {
     ctx.fillStyle = "#0000ff";
     ctx.fillRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
 
-    if(mode == MODE_TITLE) {
+    if(mode == Mode.TITLE) {
 	ctx.drawImage(titleBitmap, 0, 0);
 	return;
     }
 
-    if(mode == MODE_WIN) {
+    if(mode == Mode.WIN) {
 	ctx.drawImage(winBitmap, 0, 0);
     }
 }
@@ -107,9 +106,9 @@ function processKeys() {
 function press(c) {
     console.log("press "+c);
     if(c==32) {
-	if(mode == MODE_TITLE) {
+	if(mode == Mode.TITLE) {
 	    resetGame();
-	    mode = MODE_PLAY;
+	    mode = Mode.PLAY;
 	}
     } else {
 	keysDown[c] = 1;
@@ -171,7 +170,7 @@ function step(cnt) {
     world.Step(timeStep, iteration);
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     drawWorld(world, ctx);
-    setTimeout('step(' + (cnt || 0) + ')', 10);
+    setTimeout('step(' + (cnt || 0) + ')', 20);
 }
 
 var world;
