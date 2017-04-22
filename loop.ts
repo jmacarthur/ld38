@@ -19,6 +19,8 @@ var previous_y_velocity : number = 0;
 var platforms : Platform[];
 var platform_bodies : any[];
 var translation_y: number = 0;
+var world_rotation: number = -0.005;
+var world_rotation_speed : number = 0.0;
 // Things used by box2djs
 var b2CircleDef;
 var b2BodyDef;
@@ -180,7 +182,7 @@ function createWorld() {
 
     createPlatforms(world);
 
-    playerBox = createBox(world, 320,240,16,32, false);
+    playerBox = createBox(world, 320-8,240,16,32, false);
 
     return world;
 }
@@ -206,15 +208,7 @@ function processKeys(): void
 	playerBox.WakeUp();
     }
     if(keysDown[38] || keysDown[87]) {
-	for(var i : number = 0; i<platform_bodies.length; i++) {
-	    var rot = platform_bodies[i].GetRotation();
-	    var x = platforms[i].x + platforms[i].width/2- 320; var y = platforms[i].y + platforms[i].height/2 - 240;
-	    var nx = x*Math.cos(rot)-y*Math.sin(rot);
-	    var ny = x*Math.sin(rot)+y*Math.cos(rot);
-	    var pos = new b2Vec2(nx+320,ny+240);
-	    platform_bodies[i].SetCenterPosition(pos, rot + 0.01);	    
-	    playerBox.WakeUp();
-	}
+	world_rotation += 0.1;
     }
 }
 
@@ -237,6 +231,16 @@ function checkGrounded(): void
     var delta_y = vel.y - previous_y_velocity;
     grounded = (delta_y < 1 && delta_y > -1);
     previous_y_velocity = vel.y;
+
+    if(grounded) {
+	var pos = playerBox.GetCenterPosition();
+	var moment = pos.x - 320;
+	world_rotation_speed += moment / 10000;
+    }
+
+    ground_connection = Math.min(0.1/Math.abs(delta_y), 1.0);
+    world_rotation += ground_connection*world_rotation_speed*0.1;
+    world_rotation_speed *= 0.9;
 }
 
 function centre_viewing_window(): void
@@ -251,6 +255,19 @@ function centre_viewing_window(): void
     ctx.setTransform(1,0,0,1,0,-translation_y);
 }
 
+function rotate_world()
+{
+    for(var i : number = 0; i<platform_bodies.length; i++) {
+	var rot = world_rotation;
+	var x = platforms[i].x + platforms[i].width/2- 320; var y = platforms[i].y + platforms[i].height/2 - 240;
+	var nx = x*Math.cos(rot)-y*Math.sin(rot);
+	var ny = x*Math.sin(rot)+y*Math.cos(rot);
+	var pos = new b2Vec2(nx+320,ny+240);
+	platform_bodies[i].SetCenterPosition(pos, rot + 0.01);
+	playerBox.WakeUp();
+    }
+}
+
 function step(cnt) {
     if(stopRunloop) return;
     var stepping = false;
@@ -259,6 +276,7 @@ function step(cnt) {
     processKeys();
     horizontalFriction();
     checkGrounded();
+    rotate_world();
     world.Step(timeStep, iteration);
     ctx.setTransform(1,0,0,1,0,0);
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
