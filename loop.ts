@@ -14,6 +14,8 @@ var winctx, titlectx;
 var mode : Mode;
 var stopRunloop: boolean;
 var playerBox;
+var grounded : boolean = true;
+var previous_y_velocity : number = 0;
 
 // Things used by box2djs
 var b2CircleDef;
@@ -133,6 +135,7 @@ function createBox(world, x, y, width, height, fixed = false) {
     var boxSd = new b2BoxDef();
     if (!fixed) boxSd.density = 1.0;
     boxSd.extents.Set(width, height);
+    boxSd.friction = 0.0;
     var boxBd = new b2BodyDef();
     boxBd.AddShape(boxSd);
     boxBd.preventRotation = true;
@@ -144,7 +147,7 @@ function createWorld() {
     var worldAABB = new b2AABB();
     worldAABB.minVertex.Set(-1000, -1000);
     worldAABB.maxVertex.Set(1000, 1000);
-    var gravity = new b2Vec2(0, 9.81);
+    var gravity = new b2Vec2(0, 98.1);
     var doSleep = true;
     var world = new b2World(worldAABB, gravity, doSleep);
     createBox(world, 0,400,640,8,true);
@@ -168,8 +171,34 @@ function processKeys(): void
 	playerBox.ApplyForce( new b2Vec2(100000, 0), playerBox.GetCenterPosition() );
 	playerBox.WakeUp();
     }
+    if(keysDown[32] && grounded) {
+	playerBox.ApplyImpulse( new b2Vec2(0, -100000), playerBox.GetCenterPosition() );
+	console.log("Jump");
+	grounded = false;
+	playerBox.WakeUp();
+    }
 }
 
+function horizontalFriction() : void
+{
+    // This provides artifical horizontal friction. We don't
+    // do this in box2d as box2d friction prevents jumping.
+    var vel = playerBox.GetLinearVelocity();
+    vel.x = vel.x * 0.9;
+    playerBox.SetLinearVelocity(vel);
+}
+
+function checkGrounded(): void
+{
+    // Because collision detection isn't in this version of box2d,
+    // fudge ground detection: You can jump if you're falling
+    // at a fixed rate (or zero) - if you are in free fall, then
+    // your velocity will always be increasing.
+    var vel = playerBox.GetLinearVelocity();
+    delta_y = vel.y - previous_y_velocity;
+    grounded = (delta_y < 1 && delta_y > -1);
+    previous_y_velocity = vel.y;
+}
 
 function step(cnt) {
     if(stopRunloop) return;
@@ -177,6 +206,8 @@ function step(cnt) {
     var timeStep = 1.0/30;
     var iteration = 1;
     processKeys();
+    horizontalFriction();
+    checkGrounded();
     world.Step(timeStep, iteration);
     
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -216,3 +247,4 @@ window.onload=function() {
     });
     step(0);
 };
+
