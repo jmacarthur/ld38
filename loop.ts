@@ -23,7 +23,7 @@ var world_rotation: number = -0.005;
 var world_rotation_speed : number = 0.0;
 var playerImage : Image;
 var brickImage : Image;
-
+var worldImage : Image;
 // Things used by box2djs
 var b2CircleDef;
 var b2BodyDef;
@@ -194,6 +194,7 @@ function firstTimeInit(): void
 {
     playerImage = getImage("player-upscaled");
     brickImage = getImage("brick-upscaled");
+    worldImage = getImage("world");
 }
 
 function processKeys(): void
@@ -237,15 +238,11 @@ function checkGrounded(): void
     grounded = (delta_y < 1 && delta_y > -1);
     previous_y_velocity = vel.y;
 
-    if(grounded) {
-	var pos = playerBox.GetCenterPosition();
-	var moment = pos.x - 320;
-	world_rotation_speed += moment / 10000;
-    }
-
-    ground_connection = Math.min(0.1/Math.abs(delta_y), 1.0);
-    world_rotation += ground_connection*world_rotation_speed*0.1;
+    accel = delta_y - 3.27;
+    var pos = playerBox.GetCenterPosition();
+    world_rotation_speed += Math.abs(accel)*(pos.x-320)*0.0001;
     world_rotation_speed *= 0.9;
+    world_rotation += world_rotation_speed*0.01;
 }
 
 function centre_viewing_window(): void
@@ -275,11 +272,20 @@ function rotate_world()
 
 function drawBitmap(ctx) : void
 {
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, translation_y, canvasWidth, canvasHeight);
     var pos = playerBox.GetCenterPosition();
+
     ctx.save();
     ctx.translate(320,240);
     ctx.rotate(world_rotation);
     ctx.translate(-320,-240);
+
+    ctx.drawImage(worldImage, -405+320,-405+240);
+
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, 640,480);
+    
     var level : any = levels["Level 1"]["map"];
     for(var l = 0;l< level.length; l++) {
 	var line : string = level[l];
@@ -292,6 +298,7 @@ function drawBitmap(ctx) : void
     }
     ctx.restore();
     ctx.drawImage(playerImage, pos.x-16, pos.y-32);
+
 }
 
 function step(cnt) {
@@ -305,7 +312,6 @@ function step(cnt) {
     rotate_world();
     world.Step(timeStep, iteration);
     ctx.setTransform(1,0,0,1,0,0);
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     centre_viewing_window();
     //drawWorld(world, ctx); // For Box2Djs
     drawBitmap(ctx);
