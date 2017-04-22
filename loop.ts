@@ -92,29 +92,6 @@ function resetGame()
 {
 }
 
-function init()
-{
-    mode = Mode.TITLE;
-    playerImage = getImage("player");
-    springSound = new Audio("audio/boing.wav");
-    makeTitleBitmaps();
-    return true;
-}
-
-function draw() {
-    ctx.fillStyle = "#0000ff";
-    ctx.fillRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
-
-    if(mode == Mode.TITLE) {
-	ctx.drawImage(titleBitmap, 0, 0);
-	return;
-    }
-
-    if(mode == Mode.WIN) {
-	ctx.drawImage(winBitmap, 0, 0);
-    }
-}
-
 function press(c) {
     console.log("press "+c);
     if(c==32) {
