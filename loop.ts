@@ -27,6 +27,8 @@ var worldImage : Image;
 var mountainImage : Image;
 var treasureImage : Image;
 var treasure : number[][];
+var frameCounter : number = 0;
+
 // Things used by box2djs
 var b2CircleDef;
 var b2BodyDef;
@@ -300,6 +302,7 @@ function rotate_world()
 
 function drawBitmap(ctx) : void
 {
+    frameCounter += 1;
     ctx.fillStyle = "black";
     ctx.fillRect(0, translation_y, canvasWidth, canvasHeight);
     var pos = playerBox.GetCenterPosition();
@@ -329,9 +332,15 @@ function drawBitmap(ctx) : void
 	    }
 	}
     }
+
+    var treasureColours = [ "#ff0000", "#00ff00", "#ffff00", "#0000ff", "#ff00ff", "#00ffff", "#ffffff" ];
     for(var i=0;i<treasure.length;i++) {
 	var tpos : number[] = treasure[i];
+	ctx.globalCompositeOperation = 'source-over';
 	ctx.drawImage(treasureImage, tpos[0]*32, tpos[1]*32);
+	ctx.fillStyle = treasureColours[Math.floor(frameCounter/8)%7];
+	ctx.globalCompositeOperation = 'multiply';
+	ctx.fillRect(tpos[0]*32, tpos[1]*32,32,32);
     }
     ctx.restore();
     ctx.drawImage(playerImage, pos.x-16, pos.y-32);
