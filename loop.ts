@@ -152,8 +152,8 @@ function createWorld() {
     var doSleep = true;
     var world = new b2World(worldAABB, gravity, doSleep);
     createBox(world, 0,400,640,8,true);
-
-    ball = createBall(world, 320,240, 30, false, 1.0);
+    createBall(world, 310,350,50,true, 1.0);
+    box = createBox(world, 320,240,8,16, false);
 
     return world;
 }
@@ -164,7 +164,7 @@ function firstTimeInit(): void
 
 function step(cnt) {
     var stepping = false;
-    var timeStep = 1.0/60;
+    var timeStep = 1.0/30;
     var iteration = 1;
     
     world.Step(timeStep, iteration);
