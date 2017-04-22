@@ -3,7 +3,7 @@
 var canvas = document.getElementsByTagName('canvas')[0];
 var ctx = null;
 var body = document.getElementsByTagName('body')[0];
-var keysDown = new Array();
+var keysDown : boolean[] = new Array();
 var SCREENWIDTH  = 640;
 var SCREENHEIGHT = 480;
 var canvasHeight : number, canvasWidth : number;
@@ -12,6 +12,8 @@ enum Mode { TITLE, PLAY, WIN };
 var winBitmap, titleBitmap; 
 var winctx, titlectx;
 var mode : Mode;
+var stopRunloop: boolean;
+var playerBox;
 
 // Things used by box2djs
 var b2CircleDef;
@@ -96,13 +98,6 @@ function draw() {
     }
 }
 
-function processKeys() {
-    if(keysDown[40] || keysDown[83]);
-    if(keysDown[38] || keysDown[87]);
-    if(keysDown[37] || keysDown[65]);
-    if(keysDown[39] || keysDown[68]);
-}
-
 function press(c) {
     console.log("press "+c);
     if(c==32) {
@@ -111,19 +106,19 @@ function press(c) {
 	    mode = Mode.PLAY;
 	}
     } else {
-	keysDown[c] = 1;
+	keysDown[c] = true;
     }
 }
 
 function unpress(c) {
-    keysDown[c] = 0;
+    keysDown[c] = false;
 }
 
 function createBall(world, x, y, rad, fixed = false, density = 1.0) {
     var ballShape = new b2CircleDef();
     if (!fixed) ballShape.density = 10.0;
     ballShape.radius = rad || 10;
-    ballShape.restitution = 1.0; // How bouncy the ball is
+    ballShape.restitution = 0.1; // How bouncy the ball is
     ballShape.friction =0;
     var ballBd = new b2BodyDef();
     ballBd.AddShape(ballShape);
@@ -154,7 +149,7 @@ function createWorld() {
     var world = new b2World(worldAABB, gravity, doSleep);
     createBox(world, 0,400,640,8,true);
     createBall(world, 310,350,50,true, 1.0);
-    box = createBox(world, 320,240,8,16, false);
+    playerBox = createBox(world, 320,240,8,16, false);
 
     return world;
 }
@@ -163,12 +158,27 @@ function firstTimeInit(): void
 {
 }
 
+function processKeys(): void
+{
+    if(keysDown[37] || keysDown[65]) {
+	playerBox.ApplyForce( new b2Vec2(-100000, 0), playerBox.GetCenterPosition() );
+	playerBox.WakeUp();
+    }
+    if(keysDown[39] || keysDown[68]) {
+	playerBox.ApplyForce( new b2Vec2(100000, 0), playerBox.GetCenterPosition() );
+	playerBox.WakeUp();
+    }
+}
+
+
 function step(cnt) {
+    if(stopRunloop) return;
     var stepping = false;
     var timeStep = 1.0/30;
     var iteration = 1;
-    
+    processKeys();
     world.Step(timeStep, iteration);
+    
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     drawWorld(world, ctx);
     setTimeout('step(' + (cnt || 0) + ')', 20);
@@ -186,6 +196,19 @@ window.onload=function() {
     canvasLeft = parseInt(canvasElm.style.left);
     canvas.addEventListener('click', function(e) {
     });
+
+    body.onkeydown = function (event) {
+	var c = event.keyCode;
+	keysDown[c] = true;
+	if(c == 81) {
+	    stopRunloop=true;
+	}	
+    }
+    body.onkeyup = function (event) {
+	var c = event.keyCode;
+	keysDown[c] = false;
+    };
+
     canvas.addEventListener('contextmenu', function(e) {
 	/* Right click - does nothing. */
 	console.log("Right click");
