@@ -1,5 +1,5 @@
 /// <reference path="draw_world.ts" />
-
+/// <reference_path="levels.ts" />
 var canvas = document.getElementsByTagName('canvas')[0];
 var ctx = null;
 var body = document.getElementsByTagName('body')[0];
@@ -30,6 +30,7 @@ var b2Vec2, b2World;
 
 // Other external things
 var $;
+var levels;
 
 class Platform {
     x : number;
@@ -135,6 +136,26 @@ function createBox(world, x, y, width, height, fixed = false) {
     return world.CreateBody(boxBd)
 }
 
+function createPlatforms(world) {
+    platforms = new Array();
+    var level : any = levels["Level 1"]["map"];
+    for(var l = 0;l< level.length; l++) {
+	var line : string = level[l];
+	for (var x =0;x<line.length;x++) {
+	    if(line[x] == '#') {
+		platforms.push(new Platform(x*32, l*32, 32, 32));
+	    }
+	}
+    }
+    platform_bodies = [];
+    for(var i:number=0;i<platforms.length;i++) {
+	var p : Platform = platforms[i];
+	platform_bodies.push(createBox(world, p.x,p.y,p.width,p.height,true));
+    }
+    var b2 = createBall(world, 310,350,50,true, 1.0);
+
+}
+
 function createWorld() {
     var worldAABB = new b2AABB();
     worldAABB.minVertex.Set(-1000, -1000);
@@ -143,17 +164,7 @@ function createWorld() {
     var doSleep = true;
     var world = new b2World(worldAABB, gravity, doSleep);
 
-    platforms = [ new Platform(0,0,640,8),
-		  new Platform(0,480-8,640,8),
-		  new Platform(0,8,8,480-16),
-		  new Platform(640-8,8,8,480-16)
-		];
-    platform_bodies = [];
-    for(var i:number=0;i<platforms.length;i++) {
-	var p : Platform = platforms[i];
-	platform_bodies.push(createBox(world, p.x,p.y,p.width,p.height,true));
-    }
-    var b2 = createBall(world, 310,350,50,true, 1.0);
+    createPlatforms(world);
 
     playerBox = createBox(world, 320,240,16,32, false);
 
