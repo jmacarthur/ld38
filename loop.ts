@@ -167,7 +167,6 @@ function createPlatforms(world) {
 	var p : Platform = platforms[i];
 	platform_bodies.push(createBox(world, p.x,p.y,p.width,p.height,true));
     }
-    var b2 = createBall(world, 310,350,50,true, 1.0);
 
 }
 
