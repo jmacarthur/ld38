@@ -10,7 +10,23 @@ var MODE_TITLE = 0;
 var MODE_PLAY  = 1;
 var MODE_WIN   = 2;
 
-function getImage(name)
+enum Mode { MODE_TITLE, MODE_PLAY, MODE_WIN };
+var winBitmap, titleBitmap; 
+var winctx, titlectx;
+var mode : Mode;
+
+// Things used by box2djs
+var b2CircleDef;
+var b2BodyDef;
+var b2PolyDef;
+var b2Joint;
+var b2RevoluteJointDef;
+var b2BoxDef, b2AABB;
+var b2Vec2, b2World;
+// Other external things
+var $;
+
+function getImage(name) : Image
 {
     image = new Image();
     image.src = 'graphics/'+name+'.png';
@@ -27,7 +43,7 @@ function drawChar(context, c, x, y)
 
 function drawString(context, string, x, y) {
     string = string.toUpperCase();
-    for(i = 0; i < string.length; i++) {
+    for(var i : number = 0; i < string.length; i++) {
 	drawChar(context, string[i], x, y);
 	x += 12;
     }
@@ -56,8 +72,6 @@ function makeTitleBitmaps()
 
 function resetGame()
 {
-    x = 128;
-    y = 128;
 }
 
 function init()
@@ -78,30 +92,16 @@ function draw() {
 	return;
     }
 
-    ctx.drawImage(playerImage, x, y);
-
     if(mode == MODE_WIN) {
 	ctx.drawImage(winBitmap, 0, 0);
     }
 }
 
 function processKeys() {
-    if(keysDown[40] || keysDown[83]) y += 4;
-    if(keysDown[38] || keysDown[87]) y -= 4;
-    if(keysDown[37] || keysDown[65]) x -= 4;
-    if(keysDown[39] || keysDown[68]) x += 4;
-    if(x < 0) x = 0;
-    if(x > SCREENWIDTH - playerImage.width)  x = SCREENHEIGHT - playerImage.width;
-    if(y < 0) y = 0;
-    if(y > SCREENWIDTH - playerImage.height) y = SCREENHEIGHT - playerImage.height;
-}
-
-function drawRepeat() {
-    if(mode != MODE_TITLE) {
-	processKeys();
-    }
-    draw();
-    if(!stopRunloop) setTimeout('drawRepeat()',20);
+    if(keysDown[40] || keysDown[83]);
+    if(keysDown[38] || keysDown[87]);
+    if(keysDown[37] || keysDown[65]);
+    if(keysDown[39] || keysDown[68]);
 }
 
 function press(c) {
@@ -117,17 +117,16 @@ function press(c) {
 }
 
 function unpress(c) {
-    console.log("unpress "+c);
     keysDown[c] = 0;
 }
 
 function createBall(world, x, y, rad, fixed = false, density = 1.0) {
-    ballShape = new b2CircleDef();
+    var ballShape = new b2CircleDef();
     if (!fixed) ballShape.density = 10.0;
     ballShape.radius = rad || 10;
     ballShape.restitution = 1.0; // How bouncy the ball is
     ballShape.friction =0;
-    ballBd = new b2BodyDef();
+    var ballBd = new b2BodyDef();
     ballBd.AddShape(ballShape);
     ballBd.linearDamping = 0.01;
     ballBd.position.Set(x,y);
@@ -163,17 +162,6 @@ function createWorld() {
 function firstTimeInit(): void
 {
 }
-
-function drawWorld(world, context) {
-    ctx.fillStyle = "#7f7f7f";
-    ctx.fillRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
-    for (var b = world.m_bodyList; b; b = b.m_next) {
-	for (var s = b.GetShapeList(); s != null; s = s.GetNext()) {
-	    drawShape(s, context);
-	}
-    }
-}
-
 
 function step(cnt) {
     var stepping = false;
