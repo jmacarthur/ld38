@@ -139,13 +139,28 @@ function createBox(world, x, y, width, height, fixed = false) {
 function createPlatforms(world) {
     platforms = new Array();
     var level : any = levels["Level 1"]["map"];
+    var platform_width : number = 0;
+    var platform_start : number = 0;
     for(var l = 0;l< level.length; l++) {
 	var line : string = level[l];
+	platform_width = 0;
 	for (var x =0;x<line.length;x++) {
 	    if(line[x] == '#') {
-		platforms.push(new Platform(x*32, l*32, 32, 32));
+		if(platform_width == 0) {
+		    platform_start = x;
+		}
+		platform_width += 1;
+	    } else {
+		if(platform_width > 0) {
+		    platforms.push(new Platform(platform_start*32, l*32, 32*platform_width, 32));
+		    platform_width = 0;
+		}
 	    }
 	}
+	if(platform_width > 0) {
+	    platforms.push(new Platform(platform_start*32, l*32, 32*platform_width, 32));
+	}
+
     }
     platform_bodies = [];
     for(var i:number=0;i<platforms.length;i++) {
@@ -228,7 +243,6 @@ function checkGrounded(): void
 function centre_viewing_window(): void
 {
     var pos = playerBox.GetCenterPosition();
-    console.log("pos.y = "+pos.y+", translation = "+translation_y)
     if((pos.y - 380) > translation_y) {
 	translation_y += 4;
     }
