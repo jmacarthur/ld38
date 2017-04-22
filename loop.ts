@@ -1,3 +1,5 @@
+/// <reference path="draw_world.ts" />
+
 var canvas = document.getElementsByTagName('canvas')[0];
 var ctx = null;
 var body = document.getElementsByTagName('body')[0];
@@ -119,37 +121,87 @@ function unpress(c) {
     keysDown[c] = 0;
 }
 
+function createBall(world, x, y, rad, fixed = false, density = 1.0) {
+    ballShape = new b2CircleDef();
+    if (!fixed) ballShape.density = 10.0;
+    ballShape.radius = rad || 10;
+    ballShape.restitution = 1.0; // How bouncy the ball is
+    ballShape.friction =0;
+    ballBd = new b2BodyDef();
+    ballBd.AddShape(ballShape);
+    ballBd.linearDamping = 0.01;
+    ballBd.position.Set(x,y);
+    ballBd.friction =0;
+    return world.CreateBody(ballBd);
+};
 
-if (canvas.getContext('2d')) {
-    stopRunloop = false;
-    ctx = canvas.getContext('2d');
-    body.onkeydown = function (event) {
-	var c = event.keyCode;
-        keysDown[c] = 1;
-	if(c == 81) {
-	    stopRunloop=true;
+function createBox(world, x, y, width, height, fixed = false) {
+    if (typeof(fixed) == 'undefined') fixed = true;
+    var boxSd = new b2BoxDef();
+    if (!fixed) boxSd.density = 1.0;
+    boxSd.extents.Set(width, height);
+    var boxBd = new b2BodyDef();
+    boxBd.AddShape(boxSd);
+    boxBd.position.Set(x,y);
+    return world.CreateBody(boxBd)
+}
+
+function createWorld() {
+    var worldAABB = new b2AABB();
+    worldAABB.minVertex.Set(-1000, -1000);
+    worldAABB.maxVertex.Set(1000, 1000);
+    var gravity = new b2Vec2(0, 9.81);
+    var doSleep = true;
+    var world = new b2World(worldAABB, gravity, doSleep);
+    createBox(world, 0,400,640,8,true);
+
+    ball = createBall(world, 320,240, 30, false, 1.0);
+
+    return world;
+}
+
+function firstTimeInit(): void
+{
+}
+
+function drawWorld(world, context) {
+    ctx.fillStyle = "#7f7f7f";
+    ctx.fillRect(0, 0, SCREENWIDTH, SCREENHEIGHT);
+    for (var b = world.m_bodyList; b; b = b.m_next) {
+	for (var s = b.GetShapeList(); s != null; s = s.GetNext()) {
+	    drawShape(s, context);
 	}
-	if(c == 32) {
-	    if(mode == MODE_TITLE) {
-		resetGame();
-		mode = MODE_PLAY;
-	    }
-	}
-	if(c == 82) {
-	    if(mode == MODE_WIN) {
-		mode = MODE_TITLE;
-	    }
-	}
-    };
-
-
-    
-    body.onkeyup = function (event) {
-	var c = event.keyCode;
-        keysDown[c] = 0;
-    };
-
-    if(init()) {      
-      drawRepeat();
     }
 }
+
+
+function step(cnt) {
+    var stepping = false;
+    var timeStep = 1.0/60;
+    var iteration = 1;
+    
+    world.Step(timeStep, iteration);
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    drawWorld(world, ctx);
+    setTimeout('step(' + (cnt || 0) + ')', 10);
+}
+
+var world;
+window.onload=function() {
+    firstTimeInit();
+    world = createWorld();
+    ctx = $('canvas').getContext('2d');
+    var canvasElm = $('canvas');
+    canvasWidth = parseInt(canvasElm.width);
+    canvasHeight = parseInt(canvasElm.height);
+    canvasTop = parseInt(canvasElm.style.top);
+    canvasLeft = parseInt(canvasElm.style.left);
+    canvas.addEventListener('click', function(e) {
+    });
+    canvas.addEventListener('contextmenu', function(e) {
+	/* Right click - does nothing. */
+	console.log("Right click");
+	return false;
+    });
+    step(0);
+};
