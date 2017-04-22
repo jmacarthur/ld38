@@ -18,7 +18,7 @@ var grounded : boolean = true;
 var previous_y_velocity : number = 0;
 var platforms : Platform[];
 var platform_bodies : any[];
-
+var translation_y: number = 0;
 // Things used by box2djs
 var b2CircleDef;
 var b2BodyDef;
@@ -209,7 +209,7 @@ function processKeys(): void
 	    var x = platforms[i].x + platforms[i].width/2- 320; var y = platforms[i].y + platforms[i].height/2 - 240;
 	    var nx = x*Math.cos(rot)-y*Math.sin(rot);
 	    var ny = x*Math.sin(rot)+y*Math.cos(rot);
-	    var pos: b2Vec2 = new b2Vec2(nx+320,ny+240);
+	    var pos = new b2Vec2(nx+320,ny+240);
 	    platform_bodies[i].SetCenterPosition(pos, rot + 0.01);	    
 	    playerBox.WakeUp();
 	}
@@ -237,6 +237,19 @@ function checkGrounded(): void
     previous_y_velocity = vel.y;
 }
 
+function centre_viewing_window(): void
+{
+    var pos = playerBox.GetCenterPosition();
+    console.log("pos.y = "+pos.y+", translation = "+translation_y)
+    if((pos.y - 380) > translation_y) {
+	translation_y += 4;
+    }
+    else if((pos.y - 100) < translation_y) {
+	translation_y -= 4;
+    }
+    ctx.setTransform(1,0,0,1,0,-translation_y);
+}
+
 function step(cnt) {
     if(stopRunloop) return;
     var stepping = false;
@@ -246,8 +259,9 @@ function step(cnt) {
     horizontalFriction();
     checkGrounded();
     world.Step(timeStep, iteration);
-    
+    ctx.setTransform(1,0,0,1,0,0);
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    centre_viewing_window();
     drawWorld(world, ctx);
     setTimeout('step(' + (cnt || 0) + ')', 20);
 }
