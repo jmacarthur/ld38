@@ -21,6 +21,9 @@ var platform_bodies : any[];
 var translation_y: number = 0;
 var world_rotation: number = -0.005;
 var world_rotation_speed : number = 0.0;
+var playerImage : Image;
+var brickImage : Image;
+
 // Things used by box2djs
 var b2CircleDef;
 var b2BodyDef;
@@ -128,7 +131,7 @@ function createBall(world, x, y, rad, fixed = false, density = 1.0) {
 function createBox(world, x, y, width, height, fixed = false) {
     if (typeof(fixed) == 'undefined') fixed = true;
     var boxSd = new b2BoxDef();
-    if (!fixed) boxSd.density = 1.0;
+    if (!fixed) boxSd.density = 0.25;
     boxSd.extents.Set(width/2, height/2);
     boxSd.friction = 0.0;
     var boxBd = new b2BodyDef();
@@ -182,13 +185,15 @@ function createWorld() {
 
     createPlatforms(world);
 
-    playerBox = createBox(world, 320-8,240,16,32, false);
+    playerBox = createBox(world, 320-16,240,32,64, false);
 
     return world;
 }
 
 function firstTimeInit(): void
 {
+    playerImage = getImage("player-upscaled");
+    brickImage = getImage("brick-upscaled");
 }
 
 function processKeys(): void
@@ -268,6 +273,27 @@ function rotate_world()
     }
 }
 
+function drawBitmap(ctx) : void
+{
+    var pos = playerBox.GetCenterPosition();
+    ctx.save();
+    ctx.translate(320,240);
+    ctx.rotate(world_rotation);
+    ctx.translate(-320,-240);
+    var level : any = levels["Level 1"]["map"];
+    for(var l = 0;l< level.length; l++) {
+	var line : string = level[l];
+	platform_width = 0;
+	for (var x =0;x<line.length;x++) {
+	    if(line[x] == '#') {
+		ctx.drawImage(brickImage, x*32, l*32);
+	    }
+	}
+    }
+    ctx.restore();
+    ctx.drawImage(playerImage, pos.x-16, pos.y-32);
+}
+
 function step(cnt) {
     if(stopRunloop) return;
     var stepping = false;
@@ -281,7 +307,8 @@ function step(cnt) {
     ctx.setTransform(1,0,0,1,0,0);
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     centre_viewing_window();
-    drawWorld(world, ctx);
+    //drawWorld(world, ctx); // For Box2Djs
+    drawBitmap(ctx);
     setTimeout('step(' + (cnt || 0) + ')', 20);
 }
 
