@@ -16,6 +16,8 @@ var stopRunloop: boolean;
 var playerBox;
 var grounded : boolean = true;
 var previous_y_velocity : number = 0;
+var platforms : Platform[];
+var platform_bodies : any[];
 
 // Things used by box2djs
 var b2CircleDef;
@@ -28,6 +30,19 @@ var b2Vec2, b2World;
 
 // Other external things
 var $;
+
+class Platform {
+    x : number;
+    y: number;
+    width:number;
+    height:number;
+    constructor(x : number, y: number, width: number, height:number) {
+	this.x = x;
+	this.y = y;
+	this.width = width;
+	this.height = height;
+    }
+}
 
 function getImage(name) : Image
 {
@@ -134,12 +149,12 @@ function createBox(world, x, y, width, height, fixed = false) {
     if (typeof(fixed) == 'undefined') fixed = true;
     var boxSd = new b2BoxDef();
     if (!fixed) boxSd.density = 1.0;
-    boxSd.extents.Set(width, height);
+    boxSd.extents.Set(width/2, height/2);
     boxSd.friction = 0.0;
     var boxBd = new b2BodyDef();
     boxBd.AddShape(boxSd);
     boxBd.preventRotation = true;
-    boxBd.position.Set(x,y);
+    boxBd.position.Set(x+width/2,y+height/2);
     return world.CreateBody(boxBd)
 }
 
@@ -150,9 +165,20 @@ function createWorld() {
     var gravity = new b2Vec2(0, 98.1);
     var doSleep = true;
     var world = new b2World(worldAABB, gravity, doSleep);
-    createBox(world, 0,400,640,8,true);
-    createBall(world, 310,350,50,true, 1.0);
-    playerBox = createBox(world, 320,240,8,16, false);
+
+    platforms = [ new Platform(0,0,640,8),
+		  new Platform(0,480-8,640,8),
+		  new Platform(0,8,8,480-16),
+		  new Platform(640-8,8,8,480-16)
+		];
+    platform_bodies = [];
+    for(var i:number=0;i<platforms.length;i++) {
+	var p : Platform = platforms[i];
+	platform_bodies.push(createBox(world, p.x,p.y,p.width,p.height,true));
+    }
+    var b2 = createBall(world, 310,350,50,true, 1.0);
+
+    playerBox = createBox(world, 320,240,16,32, false);
 
     return world;
 }
@@ -177,6 +203,17 @@ function processKeys(): void
 	grounded = false;
 	playerBox.WakeUp();
     }
+    if(keysDown[38] || keysDown[87]) {
+	for(var i : number = 0; i<platform_bodies.length; i++) {
+	    var rot = platform_bodies[i].GetRotation();
+	    var x = platforms[i].x + platforms[i].width/2- 320; var y = platforms[i].y + platforms[i].height/2 - 240;
+	    var nx = x*Math.cos(rot)-y*Math.sin(rot);
+	    var ny = x*Math.sin(rot)+y*Math.cos(rot);
+	    var pos: b2Vec2 = new b2Vec2(nx+320,ny+240);
+	    platform_bodies[i].SetCenterPosition(pos, rot + 0.01);	    
+	    playerBox.WakeUp();
+	}
+    }
 }
 
 function horizontalFriction() : void
@@ -195,7 +232,7 @@ function checkGrounded(): void
     // at a fixed rate (or zero) - if you are in free fall, then
     // your velocity will always be increasing.
     var vel = playerBox.GetLinearVelocity();
-    delta_y = vel.y - previous_y_velocity;
+    var delta_y = vel.y - previous_y_velocity;
     grounded = (delta_y < 1 && delta_y > -1);
     previous_y_velocity = vel.y;
 }
